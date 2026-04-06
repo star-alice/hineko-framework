@@ -3,8 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TestService = require(script.Parent["test-service"])
 local Loader = require(ReplicatedStorage.Shared["hineko-framework"])
 
-local TestService = {}
-TestService.__index = TestService
+local TestService2 = {}
+TestService2.__index = TestService2
 
 export type Props = {
 	dependencie: {
@@ -12,15 +12,15 @@ export type Props = {
 	},
 }
 
-export type Self = typeof(setmetatable({} :: Props, TestService))
+export type Self = typeof(setmetatable({} :: Props, TestService2))
 
-function TestService.new()
-	local self = setmetatable({}, TestService)
+function TestService2.new()
+	local self = setmetatable({}, TestService2)
 
 	return self
 end
 
-function TestService.OnStart(self: Self)
+function TestService2.OnStart(self: Self)
 	self.dependencie = {
 		TestService = Loader:getDependency(script.Parent["test-service"]),
 	}
