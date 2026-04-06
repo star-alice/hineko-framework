@@ -10,23 +10,23 @@ type Event<T> = Event.Event<T>
 local Loader = {}
 Loader.__index = Loader
 
-type Props<EventType> = {
+type Props<EventType, TClass> = {
 	_lifecycleManager: LifecycleManager.Self,
 	_paths: { Folder },
 	_events: { [string]: Event<EventType> },
 	_ignited: boolean,
-	_modules: { [ModuleScript]: any },
+	_singletons: { [ModuleScript]: TClass },
 }
 
 export type Self = typeof(setmetatable({}, Loader))
 
-function Loader.new<EventType>()
-	local self = setmetatable({} :: Props<EventType>, Loader) :: Self
+function Loader.new<EventType, TClass>()
+	local self = setmetatable({} :: Props<EventType, TClass>, Loader) :: Self
 
 	self._paths = {}
 	self._ignited = false
 	self._lifecycleManager = LifecycleManager.new()
-	self._modules = {}
+	self._singletons = {}
 	self._events = {
 		ignited = Event.new("Ignited") :: Event<LoaderEventTypes.IgnitedResult>,
 		moduleLoaded = Event.new("ModuleLoaded") :: Event<LoaderEventTypes.ModuleLoadedResult>,
@@ -53,7 +53,7 @@ function Loader.ignite(self: Self)
 	self:_loadAllModules()
 
 	-- Running OnStart
-	for module, class in self._modules do
+	for module, class in self._singletons do
 		local onStart = class.OnStart
 
 		if not onStart or type(onStart) ~= "function" then
@@ -92,14 +92,14 @@ end
 
 function Loader.getDependency<T>(self: Self, module: ModuleScript): T?
 	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
-	assert(self._modules[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
-	return self._modules[module]
+	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
+	return self._singletons[module]
 end
 
 function Loader.getModuleByClass<T>(self: Self, class: T): ModuleScript?
 	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
 
-	for module, moduleClass in self._modules do
+	for module, moduleClass in self._singletons do
 		if moduleClass == class then
 			return module
 		end
@@ -145,12 +145,12 @@ end
 ]]
 function Loader:unload(module: ModuleScript)
 	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
-	assert(self._modules[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
+	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
 
-	self._modules[module] = nil
+	self._singletons[module] = nil
 	Logger:log("Loader", `Module '{module.Name}' has been unloaded.`)
 
-	local __listeners = self._modules[module] and self._modules[module].__listeners or {}
+	local __listeners = self._singletons[module] and self._singletons[module].__listeners or {}
 
 	for lifecycle, _ in __listeners do
 		self._lifecycleManager:_remove(lifecycle, module)
@@ -183,7 +183,7 @@ function Loader._loadModule(self: Self, module: ModuleScript)
 		end
 	end
 
-	self._modules[module] = class
+	self._singletons[module] = class
 
 	-- Auto-register lifecycles declared via :implements() at module definition time
 	if result.__lifecycles then
