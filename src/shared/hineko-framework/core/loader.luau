@@ -11,7 +11,6 @@ local Loader = {}
 Loader.__index = Loader
 
 type Props<EventType, LifecycleCallback> = {
-	debugActivated: boolean,
 	_lifecycleManager: LifecycleManager.Self,
 	_paths: { Folder },
 	_events: { [string]: Event<EventType> },
