@@ -21,6 +21,10 @@ function TestService:OnPlayerRemoved(player)
 	print("Player removed:", player.Name)
 end
 
+function TestService:Hello()
+	return "Hello from TestService in TestService2!"
+end
+
 function TestService:OnInit()
 	print("TestService has been initialized!")
 end
