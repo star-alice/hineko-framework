@@ -16,7 +16,7 @@ function Logger:log(location: string, message: string, type: LoggerType?)
 	}
 
 	local logFunction = typeFunctions[type or ("info" :: LoggerType)] or print
-	logFunction(`[${LOG_BASE_NAME}] [${location}]: ${message}`)
+	logFunction(`[{LOG_BASE_NAME}] [{location}]: {message}`)
 end
 
 return Logger
