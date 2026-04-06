@@ -10,7 +10,7 @@ type Event<T> = Event.Event<T>
 local Loader = {}
 Loader.__index = Loader
 
-type Props<EventType, LifecycleCallback> = {
+type Props<EventType> = {
 	_lifecycleManager: LifecycleManager.Self,
 	_paths: { Folder },
 	_events: { [string]: Event<EventType> },
@@ -20,8 +20,8 @@ type Props<EventType, LifecycleCallback> = {
 
 export type Self = typeof(setmetatable({}, Loader))
 
-function Loader.new<EventType, LifecycleCallback>()
-	local self = setmetatable({} :: Props<EventType, LifecycleCallback>, Loader) :: Self
+function Loader.new<EventType>()
+	local self = setmetatable({} :: Props<EventType>, Loader) :: Self
 
 	self._paths = {}
 	self._ignited = false
