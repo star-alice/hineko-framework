@@ -70,6 +70,7 @@ function Loader.ignite(self: Self)
 		Logger:log("Loader", `OnStart of {module.Name} runned with success!`)
 	end
 
+	self._events.finished:fire()
 	Logger:log("Loader", "All modules loaded and started!")
 end
 
