@@ -28,4 +28,4 @@ function TestService2.OnStart(self: Self)
 	print("Received:", self.dependencie.TestService:Hello())
 end
 
-return TestService
+return TestService2

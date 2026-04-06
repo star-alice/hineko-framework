@@ -37,12 +37,6 @@ function OnPlayerRemoved:OnInit()
 	end
 
 	Players.PlayerRemoving:Connect(RemovedCallback)
-
-	for _, player in Players:GetPlayers() do
-		task.spawn(function()
-			RemovedCallback(player)
-		end)
-	end
 end
 
 return OnPlayerRemoved
