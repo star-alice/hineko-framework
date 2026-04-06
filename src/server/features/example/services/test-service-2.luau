@@ -7,7 +7,7 @@ local TestService2 = {}
 TestService2.__index = TestService2
 
 export type Props = {
-	dependencie: {
+	dependencies: {
 		TestService: TestService.Self,
 	},
 }
@@ -21,11 +21,11 @@ function TestService2.new()
 end
 
 function TestService2.OnStart(self: Self)
-	self.dependencie = {
+	self.dependencies = {
 		TestService = Loader:getDependency(script.Parent["test-service"]),
 	}
 
-	print("Received:", self.dependencie.TestService:Hello())
+	print("Received:", self.dependencies.TestService:Hello())
 end
 
 return TestService2
