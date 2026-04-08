@@ -1,14 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local HinekoFramework = require(ReplicatedStorage.Shared["hineko-framework"])
-local EventTypes = require(ReplicatedStorage.Shared["hineko-framework"].types["loader-events"])
 
--- stylua: ignore start
-local ignitedEvent: HinekoFramework.Event<EventTypes.IgnitedResult> = HinekoFramework:getEvent("ignited")
-local finishedEvent: HinekoFramework.Event<EventTypes.FinishedResult> = HinekoFramework:getEvent("finished")
-local moduleErrorEvent: HinekoFramework.Event<EventTypes.ModuleErrorResult> = HinekoFramework:getEvent("moduleError")
-local moduleLoadedEvent: HinekoFramework.Event<EventTypes.ModuleLoadedResult> = HinekoFramework:getEvent("moduleLoaded")
--- stylua: ignore end
+local ignitedEvent = HinekoFramework:getEvent("ignited")
+local finishedEvent = HinekoFramework:getEvent("finished")
+local moduleErrorEvent = HinekoFramework:getEvent("moduleError")
+local moduleLoadedEvent = HinekoFramework:getEvent("moduleLoaded")
 
 ignitedEvent:connect(function()
 	print("HinekoFramework has ignited!")
