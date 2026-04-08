@@ -4,6 +4,7 @@ local Loader = require(script.Parent.Parent)
 
 local OnPlayerAdded = {}
 OnPlayerAdded.__index = OnPlayerAdded
+OnPlayerAdded.priority = 20
 
 export type Self = typeof(setmetatable({}, OnPlayerAdded))
 

@@ -4,24 +4,25 @@ local Event = require(script.Parent.event)
 local LoaderEventTypes = require(script.Parent.Parent.types["loader-events"])
 local LifecycleManager = require(script.Parent["lifecycle-manager"])
 local Messages = require(script.Parent.Parent.constants.messages)
+local PriorityUtils = require(script.Parent.priority)
 
 type Event<T> = Event.Event<T>
 
 local Loader = {}
 Loader.__index = Loader
 
-type Props<EventType, TClass> = {
+type Props<TClass> = {
 	_lifecycleManager: LifecycleManager.Self,
 	_paths: { Folder },
-	_events: { [string]: Event<EventType> },
+	_events: { [string]: Event<unknown> },
 	_ignited: boolean,
 	_singletons: { [ModuleScript]: TClass },
 }
 
 export type Self = typeof(setmetatable({}, Loader))
 
-function Loader.new<EventType, TClass>()
-	local self = setmetatable({} :: Props<EventType, TClass>, Loader) :: Self
+function Loader.new<TClass>()
+	local self = setmetatable({} :: Props<TClass>, Loader) :: Self
 
 	self._paths = {}
 	self._ignited = false
@@ -31,13 +32,17 @@ function Loader.new<EventType, TClass>()
 		ignited = Event.new("Ignited") :: Event<LoaderEventTypes.IgnitedResult>,
 		moduleLoaded = Event.new("ModuleLoaded") :: Event<LoaderEventTypes.ModuleLoadedResult>,
 		moduleError = Event.new("ModuleError") :: Event<LoaderEventTypes.ModuleErrorResult>,
-		finished = Event.new("Finished") :: Event<LoaderEventTypes.IgnitedResult>,
-	} :: { [LoaderEventTypes.Names]: Event<EventType> }
+		finished = Event.new("Finished") :: Event<LoaderEventTypes.FinishedResult>,
+	} :: { [LoaderEventTypes.Names]: Event<unknown> }
 
 	return self
 end
 
--- - - Public functions
+-- --------------------------------------------------------------------------------
+-- ------------------------------- Public functions -------------------------------
+-- --------------------------------------------------------------------------------
+
+-- - Main functions
 --[[
     Ignites the loader, allowing it to start loading modules. This should be called after all paths have been added and before any modules are required.
 ]]
@@ -45,7 +50,7 @@ function Loader.ignite(self: Self)
 	assert(not self._ignited, Messages.ERROR.ALREADY_IGNITED)
 
 	-- Starting module loading
-	self:_loadModulesFromPath(script.Parent.Parent.lifecycles)
+	self:addPath(script.Parent.Parent.lifecycles)
 	self._ignited = true
 	self._events.ignited:fire()
 
@@ -53,23 +58,7 @@ function Loader.ignite(self: Self)
 	self:_loadAllModules()
 
 	-- Running OnStart
-	for module, class in self._singletons do
-		local onStart = class.OnStart
-
-		if not onStart or type(onStart) ~= "function" then
-			continue
-		end
-
-		local success, err = pcall(onStart, class)
-
-		if not success then
-			Logger:log("Loader", `Cannot run OnStart of module {module.Name}: {err}`, "error")
-			continue
-		end
-
-		Logger:log("Loader", `OnStart of {module.Name} runned with success!`)
-	end
-
+	self:_startAllModules()
 	self._events.finished:fire()
 	Logger:log("Loader", "All modules loaded and started!")
 end
@@ -77,36 +66,6 @@ end
 function Loader.debugMode(self: Self, state: boolean)
 	shared.HINEKO_FRAMEWORK_DEBUG = state
 	Logger:log("Loader", "Debug mode activated! Additional debug information will be logged.")
-end
-
-function Loader.isIgnited(self: Self): boolean
-	return self._ignited
-end
-
-function Loader.getEvent<T>(self: Self, eventName: LoaderEventTypes.Names): Event<T>?
-	return self._events[eventName]
-end
-
-function Loader.getLifecycleManager(self: Self): LifecycleManager.Self
-	return self._lifecycleManager
-end
-
-function Loader.getDependency<T>(self: Self, module: ModuleScript): T?
-	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
-	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
-	return self._singletons[module]
-end
-
-function Loader.getModuleByClass<T>(self: Self, class: T): ModuleScript?
-	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
-
-	for module, moduleClass in self._singletons do
-		if moduleClass == class then
-			return module
-		end
-	end
-
-	return nil
 end
 
 --[[
@@ -158,62 +117,128 @@ function Loader:unload(module: ModuleScript)
 	end
 end
 
--- - - Private functions
-function Loader._loadModule(self: Self, module: ModuleScript)
-	assert(module.Parent and module.Parent:IsA("Folder"), Messages.ERROR.INVALID_PATH)
+-- - Getters
+function Loader.isIgnited(self: Self): boolean
+	return self._ignited
+end
 
-	local success, result = pcall(require, module)
+function Loader.getEvent<T>(self: Self, eventName: LoaderEventTypes.Names): Event<T>?
+	return self._events[eventName]
+end
 
-	if not success then
-		Logger:log("Loader", `Failed to load module '{module.Name}': {result}`, "error")
-		self._events.moduleError:fire({ name = module.Name, error = result })
-		return
+function Loader.getLifecycleManager(self: Self): LifecycleManager.Self
+	return self._lifecycleManager
+end
+
+function Loader.getDependency<T>(self: Self, module: ModuleScript): T?
+	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
+	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
+	return self._singletons[module]
+end
+
+function Loader.getModuleByClass<T>(self: Self, class: T): ModuleScript?
+	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
+
+	for module, moduleClass in self._singletons do
+		if moduleClass == class then
+			return module
+		end
 	end
 
+	return nil
+end
+
+-- ---------------------------------------------------------------------------------
+-- ------------------------------- Private functions -------------------------------
+-- ---------------------------------------------------------------------------------
+
+function Loader._requireAndSortModules(self: Self)
+	local modules = {}
+
+	local function RegisterModules(folder: Folder): ()
+		for _, module in folder:QueryDescendants("ModuleScript") do
+			if not module.Parent:IsA("Folder") then
+				continue
+			end
+
+			local success, result = pcall(function()
+				return require(module)
+			end)
+
+			if not success then
+				Logger:log("Loader", `Failed to load module '{module.Name}': {result}`, "error")
+				self._events.moduleError:fire({ name = module.Name, error = result })
+			else
+				result.__instanceRef = module
+				table.insert(modules, result)
+			end
+		end
+	end
+
+	for _, path in self._paths do
+		RegisterModules(path)
+	end
+
+	Logger:log("Loader", `Loaded {#modules} modules. Sorting by priority...`)
+	return PriorityUtils:sortModuleByPriority(modules)
+end
+
+function Loader._createSingleton(self: Self, module: typeof(setmetatable({}, {})))
 	-- Try to run the OnInit callback inside the module if it exists
-	local class = result.new()
-	local initCallback = class.OnInit
+	local singleton = module.new()
+	local initCallback = singleton.OnInit
+	local instanceRef = module.__instanceRef
 
 	if initCallback and type(initCallback) == "function" then
-		local initSuccess, initError = pcall(initCallback, class)
+		local initSuccess, initError = pcall(initCallback, singleton)
 
 		if not initSuccess then
-			Logger:log("Loader", `Initialization failed for module '{module.Name}': {initError}`, "error")
-			self._events.moduleError:fire({ name = module.Name, error = initError })
+			Logger:log("Loader", `Initialization failed for module '{instanceRef}': {initError}`, "error")
+			self._events.moduleError:fire({ name = instanceRef.Name, error = initError })
 			return
 		end
 	end
 
-	self._singletons[module] = class
+	self._singletons[module.__instanceRef] = singleton
 
 	-- Auto-register lifecycles declared via :implements() at module definition time
-	if result.__lifecycles then
-		if not class.__listeners then
-			class.__listeners = {}
+	if module.__lifecycles then
+		if not singleton.__listeners then
+			singleton.__listeners = {}
 		end
 
-		for _, lifecycle in result.__lifecycles do
-			class.__listeners[lifecycle] = true
-			self._lifecycleManager:_add(lifecycle, class)
+		for _, lifecycle in module.__lifecycles do
+			singleton.__listeners[lifecycle] = true
+			self._lifecycleManager:_add(lifecycle, singleton)
 		end
 	end
 
-	self._events.moduleLoaded:fire({ name = module.Name, module = result })
+	self._events.moduleLoaded:fire({ name = instanceRef.Name, module = singleton })
 end
 
-function Loader._loadModulesFromPath(self: Self, path: Folder)
-	for _, item in path:GetChildren() do
-		if item:IsA("ModuleScript") then
-			self:_loadModule(item)
-		elseif item:IsA("Folder") then
-			self:_loadModulesFromPath(item)
-		end
+function Loader._loadAllModules(self: Self): ()
+	local sortedModules = self:_requireAndSortModules()
+	for _, module in sortedModules do
+		self:_createSingleton(module)
 	end
 end
 
-function Loader._loadAllModules(self: Self)
-	for _, path in self._paths do
-		self:_loadModulesFromPath(path)
+function Loader._startAllModules(self: Self)
+	for module, class in self._singletons do
+		local onStart = class.OnStart
+
+		if not onStart or type(onStart) ~= "function" then
+			continue
+		end
+
+		local success, err = pcall(onStart, class)
+
+		if not success then
+			Logger:log("Loader", `Cannot run OnStart of module {module.Name}: {err}`, "error")
+			continue
+		end
+
+		Logger:log("Loader", `OnStart of {module.Name} runned with success!`)
 	end
 end
 

@@ -4,6 +4,7 @@ local Loader = require(script.Parent.Parent)
 
 local OnTickLifecycle = {}
 OnTickLifecycle.__index = OnTickLifecycle
+OnTickLifecycle.priority = 20
 
 export type Self = typeof(setmetatable({}, OnTickLifecycle))
 

@@ -9,10 +9,10 @@ export type Props = {
 		},
 	},
 }
-export type Self = typeof(setmetatable({} :: Props, LifecycleManager))
+export type Self = typeof(setmetatable({}, LifecycleManager))
 
 function LifecycleManager.new(): Self
-	local self = setmetatable({}, LifecycleManager)
+	local self = setmetatable({}, LifecycleManager) :: Self
 	self._eventsCallbacks = {}
 	return self
 end

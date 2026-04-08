@@ -4,6 +4,7 @@ local Loader = require(ReplicatedStorage.Shared["hineko-framework"])
 
 local TestService = {}
 TestService.__index = TestService
+TestService.priority = 2
 
 export type Self = typeof(setmetatable({}, TestService))
 
