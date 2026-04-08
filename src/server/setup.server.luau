@@ -4,10 +4,10 @@ local HinekoFramework = require(ReplicatedStorage.Shared["hineko-framework"])
 local EventTypes = require(ReplicatedStorage.Shared["hineko-framework"].types["loader-events"])
 
 -- stylua: ignore start
-local ignitedEvent: HinekoFramework.TEvent<EventTypes.IgnitedResult> = HinekoFramework:getEvent("ignited")
-local finishedEvent: HinekoFramework.TEvent<EventTypes.FinishedResult> = HinekoFramework:getEvent("finished")
-local moduleErrorEvent: HinekoFramework.TEvent<EventTypes.ModuleErrorResult> = HinekoFramework:getEvent("moduleError")
-local moduleLoadedEvent: HinekoFramework.TEvent<EventTypes.ModuleLoadedResult> = HinekoFramework:getEvent("moduleLoaded")
+local ignitedEvent: HinekoFramework.Event<EventTypes.IgnitedResult> = HinekoFramework:getEvent("ignited")
+local finishedEvent: HinekoFramework.Event<EventTypes.FinishedResult> = HinekoFramework:getEvent("finished")
+local moduleErrorEvent: HinekoFramework.Event<EventTypes.ModuleErrorResult> = HinekoFramework:getEvent("moduleError")
+local moduleLoadedEvent: HinekoFramework.Event<EventTypes.ModuleLoadedResult> = HinekoFramework:getEvent("moduleLoaded")
 -- stylua: ignore end
 
 ignitedEvent:connect(function()
