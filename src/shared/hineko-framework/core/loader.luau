@@ -11,18 +11,18 @@ type Event<T> = Event.Event<T>
 local Loader = {}
 Loader.__index = Loader
 
-type Props<EventType, TClass> = {
+type Props<TClass> = {
 	_lifecycleManager: LifecycleManager.Self,
 	_paths: { Folder },
-	_events: { [string]: Event<EventType> },
+	_events: { [string]: Event<unknown> },
 	_ignited: boolean,
 	_singletons: { [ModuleScript]: TClass },
 }
 
 export type Self = typeof(setmetatable({}, Loader))
 
-function Loader.new<EventType, TClass>()
-	local self = setmetatable({} :: Props<EventType, TClass>, Loader) :: Self
+function Loader.new<TClass>()
+	local self = setmetatable({} :: Props<TClass>, Loader) :: Self
 
 	self._paths = {}
 	self._ignited = false
@@ -32,8 +32,8 @@ function Loader.new<EventType, TClass>()
 		ignited = Event.new("Ignited") :: Event<LoaderEventTypes.IgnitedResult>,
 		moduleLoaded = Event.new("ModuleLoaded") :: Event<LoaderEventTypes.ModuleLoadedResult>,
 		moduleError = Event.new("ModuleError") :: Event<LoaderEventTypes.ModuleErrorResult>,
-		finished = Event.new("Finished") :: Event<LoaderEventTypes.IgnitedResult>,
-	} :: { [LoaderEventTypes.Names]: Event<EventType> }
+		finished = Event.new("Finished") :: Event<LoaderEventTypes.FinishedResult>,
+	} :: { [LoaderEventTypes.Names]: Event<unknown> }
 
 	return self
 end
@@ -187,13 +187,14 @@ function Loader._createSingleton(self: Self, module: typeof(setmetatable({}, {})
 	-- Try to run the OnInit callback inside the module if it exists
 	local singleton = module.new()
 	local initCallback = singleton.OnInit
+	local instanceRef = module.__instanceRef
 
 	if initCallback and type(initCallback) == "function" then
 		local initSuccess, initError = pcall(initCallback, singleton)
 
 		if not initSuccess then
-			Logger:log("Loader", `Initialization failed for module '{module.Name}': {initError}`, "error")
-			self._events.moduleError:fire({ name = module.Name, error = initError })
+			Logger:log("Loader", `Initialization failed for module '{instanceRef}': {initError}`, "error")
+			self._events.moduleError:fire({ name = instanceRef.Name, error = initError })
 			return
 		end
 	end
@@ -212,7 +213,7 @@ function Loader._createSingleton(self: Self, module: typeof(setmetatable({}, {})
 		end
 	end
 
-	self._events.moduleLoaded:fire({ name = module.Name, module = singleton })
+	self._events.moduleLoaded:fire({ name = instanceRef.Name, module = singleton })
 end
 
 function Loader._loadAllModules(self: Self): ()
