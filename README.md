@@ -2,7 +2,7 @@
 
 # 🌸 Hineko Framework 🌸
 
-*A Roblox framework inspired by [Flamework](https://flamework.firedevs.com/)* 🌷
+*A Roblox framework inspired by [Flamework](https://flamework.fireboltofdeath.dev/)* 🌷
 
 [![Luau](https://img.shields.io/badge/Made%20with-Luau-blue?style=for-the-badge)](https://luau-lang.org/)
 [![Roblox](https://img.shields.io/badge/Platform-Roblox-red?style=for-the-badge)](https://www.roblox.com/)
