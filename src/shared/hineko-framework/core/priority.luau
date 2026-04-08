@@ -1,15 +1,5 @@
 local Priority = {}
 
-function Priority:compare(a: number, b: number): number
-	if a < b then
-		return -1
-	elseif a > b then
-		return 1
-	else
-		return 0
-	end
-end
-
 function Priority:sortModuleByPriority(modules: { { priority: number } })
 	local grouped: { [number]: { { priority: number } } } = {}
 	local keys: { number } = {}
