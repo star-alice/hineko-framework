@@ -4,6 +4,7 @@ local Loader = require(script.Parent.Parent)
 
 local OnPlayerRemoved = {}
 OnPlayerRemoved.__index = OnPlayerRemoved
+OnPlayerRemoved.priority = 20
 
 export type Self = typeof(setmetatable({}, OnPlayerRemoved))
 

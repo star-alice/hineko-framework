@@ -4,6 +4,7 @@ local Loader = require(script.Parent.Parent)
 
 local OnPhysicsLifecycle = {}
 OnPhysicsLifecycle.__index = OnPhysicsLifecycle
+OnPhysicsLifecycle.priority = 20
 
 export type Self = typeof(setmetatable({}, OnPhysicsLifecycle))
 
