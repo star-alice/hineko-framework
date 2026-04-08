@@ -136,18 +136,6 @@ function Loader.getDependency<T>(self: Self, module: ModuleScript): T?
 	return self._singletons[module]
 end
 
-function Loader.getModuleByClass<T>(self: Self, class: T): ModuleScript?
-	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
-
-	for module, moduleClass in self._singletons do
-		if moduleClass == class then
-			return module
-		end
-	end
-
-	return nil
-end
-
 -- ---------------------------------------------------------------------------------
 -- ------------------------------- Private functions -------------------------------
 -- ---------------------------------------------------------------------------------
