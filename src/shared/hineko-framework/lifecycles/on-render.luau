@@ -4,6 +4,7 @@ local Loader = require(script.Parent.Parent)
 
 local OnRenderLifecycle = {}
 OnRenderLifecycle.__index = OnRenderLifecycle
+OnRenderLifecycle.priority = 20
 
 export type Self = typeof(setmetatable({}, OnRenderLifecycle))
 

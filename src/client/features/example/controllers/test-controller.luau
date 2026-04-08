@@ -16,13 +16,13 @@ function TestController:OnInit()
 	print("TestController has been initialized!")
 end
 
-function TestController:OnTick(deltaTime)
-	print("Tick:", deltaTime)
-end
-
 function TestController:OnStart()
 	print("TestController has started!")
 end
 
-Loader:implements(TestController, "OnTick")
+function TestController:OnCharacterAdded(character)
+	print("Character added:", character.Name)
+end
+
+Loader:implements(TestController, "OnTick", "OnCharacterAdded")
 return TestController
