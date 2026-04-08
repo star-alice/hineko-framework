@@ -9,7 +9,12 @@ export type Props = {
 		},
 	},
 }
-export type Self = typeof(setmetatable({}, LifecycleManager))
+export type Self = Props & {
+	onListenerAdded: <T>(self: Self, event: string, callback: T) -> (),
+	onListenerRemoved: <T>(self: Self, event: string, callback: T) -> (),
+	_remove: <T>(self: Self, event: string, removed: T) -> (),
+	_add: <T>(self: Self, event: string, added: T) -> (),
+}
 
 function LifecycleManager.new(): Self
 	local self = setmetatable({}, LifecycleManager) :: Self
