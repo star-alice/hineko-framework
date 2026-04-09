@@ -244,14 +244,16 @@ function Loader._startAllModules<T>(self: Self<T>)
 			continue
 		end
 
-		local success, err = pcall(onStart, class)
+		task.spawn(function()
+			local success, err = pcall(onStart, class)
 
-		if not success then
-			Logger:log("Loader", `Cannot run OnStart of module {module.Name}: {err}`, "error")
-			continue
-		end
+			if not success then
+				Logger:log("Loader", `Cannot run OnStart of module {module.Name}: {err}`, "error")
+				return
+			end
 
-		Logger:log("Loader", `OnStart of {module.Name} runned with success!`)
+			Logger:log("Loader", `OnStart of {module.Name} runned with success!`)
+		end)
 	end
 end
 
