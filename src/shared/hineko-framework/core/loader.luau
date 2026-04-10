@@ -175,7 +175,7 @@ function Loader._requireAndSortModules<T>(self: Self<T>): { Module<T> }
 			end
 
 			local success, result = pcall(function()
-				return require(module)
+				return require(module :: ModuleScript)
 			end)
 
 			if not success then
