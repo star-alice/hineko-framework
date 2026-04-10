@@ -1,4 +1,5 @@
 --!optimize 2
+local priority = require("./priority")
 local Logger = require(script.Parent.logger)
 local Event = require(script.Parent.event)
 local LoaderEventTypes = require(script.Parent.Parent.types["loader-events"])
@@ -11,7 +12,7 @@ type Event<T> = Event.Self<T>
 type Module<TInstance> = {
 	new: () -> TInstance,
 	priority: number?,
-	__lifecycles: { string }?,
+	__lifecycles: { string },
 	__instanceRef: ModuleScript?,
 }
 
@@ -45,8 +46,8 @@ export type Self<T> = Props<T> & {
 	_startAllModules: (self: Self<T>) -> (),
 }
 
-function Loader.new<TInstance>()
-	local self = setmetatable({}, Loader) :: Self<TInstance>
+function Loader.new<T>(): Self<T>
+	local self = setmetatable({}, Loader)
 
 	self._paths = {}
 	self._ignited = false
@@ -57,7 +58,7 @@ function Loader.new<TInstance>()
 		moduleLoaded = Event.new("ModuleLoaded") :: Event<LoaderEventTypes.ModuleLoadedResult>,
 		moduleError = Event.new("ModuleError") :: Event<LoaderEventTypes.ModuleErrorResult>,
 		finished = Event.new("Finished") :: Event<LoaderEventTypes.FinishedResult>,
-	} :: { [LoaderEventTypes.Names]: Event<unknown> }
+	}
 
 	return self
 end
@@ -112,7 +113,7 @@ end
 ]]
 function Loader.implements<T>(
 	self: Self<T>,
-	class: { __lifecycles: { string }? },
+	class: { __lifecycles: { string } },
 	...: string -- Lifecycles to register the module
 )
 	if not class.__lifecycles then
@@ -131,10 +132,11 @@ function Loader.unload<T>(self: Self<T>, module: ModuleScript)
 	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
 	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
 
+	local singleton = self._singletons[module]
 	self._singletons[module] = nil
 	Logger:log("Loader", `Module '{module.Name}' has been unloaded.`)
 
-	local __listeners = self._singletons[module] and self._singletons[module].__listeners or {}
+	local __listeners = singleton.__listeners or {}
 
 	for lifecycle, _ in __listeners do
 		self._lifecycleManager:_remove(lifecycle, module)
@@ -146,7 +148,7 @@ function Loader.getIgnited<T>(self: Self<T>): boolean
 	return self._ignited
 end
 
-function Loader.getEvent<T, U>(self: Self<T>, eventName: LoaderEventTypes.Names): Event<U>?
+function Loader.getEvent<T>(self: Self<T>, eventName: LoaderEventTypes.Names): Event<unknown>?
 	return self._events[eventName]
 end
 
@@ -154,7 +156,7 @@ function Loader.getLifecycleManager<T>(self: Self<T>): LifecycleManager.Self
 	return self._lifecycleManager
 end
 
-function Loader.getDependency<T, U>(self: Self<T>, module: ModuleScript): U?
+function Loader.getDependency<T>(self: Self<T>, module: ModuleScript): T?
 	assert(self._ignited, Messages.ERROR.NOT_IGNITED)
 	assert(self._singletons[module], Messages.ERROR.MODULE_NOT_FOUND(module.Name))
 	return self._singletons[module]
@@ -192,7 +194,7 @@ function Loader._requireAndSortModules<T>(self: Self<T>): { Module<T> }
 	end
 
 	Logger:log("Loader", `Loaded {#modules} modules. Sorting by priority...`)
-	return PriorityUtils:sortModuleByPriority(modules)
+	return PriorityUtils:sortModuleByPriority(modules :: { priority: number })
 end
 
 function Loader._createSingleton<T>(self: Self<T>, module: Module<T>)
@@ -200,6 +202,11 @@ function Loader._createSingleton<T>(self: Self<T>, module: Module<T>)
 	local singleton = module.new()
 	local initCallback = singleton.OnInit
 	local instanceRef = module.__instanceRef
+
+	if not instanceRef then
+		Logger:log("Loader", `Module '{module}' does not have a valid __instanceRef. Skipping...`, "error")
+		return
+	end
 
 	if initCallback and type(initCallback) == "function" then
 		local initSuccess, initError = pcall(initCallback, singleton)
@@ -211,7 +218,7 @@ function Loader._createSingleton<T>(self: Self<T>, module: Module<T>)
 		end
 	end
 
-	self._singletons[module.__instanceRef] = singleton
+	self._singletons[instanceRef] = singleton
 	module.__instanceRef = nil
 
 	-- Auto-register lifecycles declared via :implements() at module definition time

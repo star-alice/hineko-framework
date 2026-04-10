@@ -18,8 +18,8 @@ function TestService:OnPlayerAdded(player)
 	print("Player added:", player.Name)
 end
 
-function TestService:OnPlayerRemoved(player)
-	print("Player removed:", player.Name)
+function TestService:OnPlayerRemoving(player)
+	print("Player removing:", player.Name)
 end
 
 function TestService:Hello()
@@ -34,5 +34,5 @@ function TestService:OnStart()
 	print("TestService has started!")
 end
 
-Loader:implements(TestService, "OnPlayerAdded", "OnPlayerRemoved")
+Loader:implements(TestService, "OnPlayerAdded", "OnPlayerRemoving")
 return TestService
