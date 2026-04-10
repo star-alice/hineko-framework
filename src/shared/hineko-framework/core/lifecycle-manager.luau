@@ -17,7 +17,7 @@ export type Self = Props & {
 }
 
 function LifecycleManager.new(): Self
-	local self = setmetatable({}, LifecycleManager) :: Self
+	local self = setmetatable({}, LifecycleManager)
 	self._eventsCallbacks = {}
 	return self
 end
