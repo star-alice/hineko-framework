@@ -55,7 +55,7 @@ HinekoFramework:ignite()
 ```
 
 
-## 🌻 Creating a Service/Controller
+## 🌻 Creating a Service or Controller
 
 ```lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -136,7 +136,7 @@ end)
 | Lifecycle | Description |
 |-----------|-------------|
 |  `OnPlayerAdded` | Fires when a player joins the game |
-|  `OnPlayerRemoved` | Fires when a player leaves the game |
+|  `OnPlayerRemoving` | Fires when a player leaves the game |
 |  `OnTick` | Fires every heartbeat tick |
 |  `OnPhysics` | Fires on physics step |
 |  `OnRender` | Fires on render step (client only) |
