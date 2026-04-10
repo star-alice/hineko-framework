@@ -1,5 +1,5 @@
 --!optimize 2
-local priority = require("./priority")
+local priority = require(script.Parent.priority)
 local Logger = require(script.Parent.logger)
 local Event = require(script.Parent.event)
 local LoaderEventTypes = require(script.Parent.Parent.types["loader-events"])
