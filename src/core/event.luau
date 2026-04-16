@@ -26,11 +26,13 @@ end
 
 function Event.fire<T>(self: Self<T>, data: T)
 	for _, listener in self._listeners do
-		local success, err = pcall(listener, data)
+		task.spawn(function()
+			local success, err = pcall(listener, data)
 
-		if not success then
-			Logger:log(self.name, string.format("Error firing event: %s", err), "error")
-		end
+			if not success then
+				Logger:log(self.name, string.format("Error firing event: %s", err), "error")
+			end
+		end)
 	end
 end
 
