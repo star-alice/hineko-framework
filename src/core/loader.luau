@@ -32,6 +32,7 @@ export type Self<T> = Props<T> & {
 	debugMode: (self: Self<T>, state: boolean) -> (),
 	addPath: (self: Self<T>, folder: Folder) -> (),
 	implements: (self: Self<T>, class: { __lifecycles: { string }? }, ...string) -> (),
+	unimplements: (self: Self<T>, class: { __lifecycles: { string }? }, ...string) -> (),
 	unload: (self: Self<T>, module: ModuleScript) -> (),
 	-- - Getters
 	getIgnited: (self: Self<T>) -> boolean,
@@ -104,9 +105,9 @@ function Loader.addPath<T>(self: Self<T>, folder: Folder)
 end
 
 --[[
-    Works like when you implements the any interface, but it's used for lifecycles.
-    Can be called at module definition time (before ignition) to declare which lifecycles a class uses.
+    Can be called at module definition time to declare which lifecycles a class uses.
     The loader will automatically register the lifecycles after the module is instantiated.
+
     @param class The class table to mark with lifecycle declarations
     @param ... Lifecycle names to register (e.g. "OnPlayerAdded", "OnPlayerRemoved")
 ]]
@@ -121,6 +122,26 @@ function Loader.implements<T>(
 
 	for _, lifecycle in { ... } do
 		table.insert(class.__lifecycles, lifecycle)
+	end
+end
+
+--[[
+    Unregisters one or more existing lifecycles from a running singleton in runtime.
+
+    @param class The class table(self) to unregister the lifecycle from
+    @param ... Lifecycle names to unregister (e.g. "OnPlayerAdded", "OnPlayerRemoving")
+]]
+function Loader.unimplements<T>(self: Self<T>, class: { __lifecycles: { string } }, ...: string)
+	if not class.__lifecycles then
+		return
+	end
+
+	for _, lifecycle in { ... } do
+		local index = table.find(class.__lifecycles, lifecycle)
+		if index then
+			table.remove(class.__lifecycles, index)
+			self._lifecycleManager:_remove(lifecycle, class)
+		end
 	end
 end
 
@@ -197,6 +218,10 @@ function Loader._requireAndSortModules<T>(self: Self<T>): { Module<T> }
 end
 
 function Loader._createSingleton<T>(self: Self<T>, module: Module<T>)
+	if not module.new then
+		return
+	end
+
 	-- Try to run the OnInit callback inside the module if it exists
 	local singleton = module.new()
 	local initCallback = singleton.OnInit

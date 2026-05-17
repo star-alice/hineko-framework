@@ -1,6 +1,14 @@
 {
   "name": "hineko-framework",
   "tree": {
-    "$path": "src"
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$className": "Folder",
+        "hineko-framework": {
+          "$path": "src"
+        }
+      }
+    }
   }
 }
