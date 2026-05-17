@@ -39,11 +39,14 @@ function OnPlayerAdded:OnInit()
 
 	Players.PlayerAdded:Connect(AddedCallback)
 
-	for _, player in Players:GetPlayers() do
-		task.spawn(function()
-			AddedCallback(player)
-		end)
-	end
+	local event = Loader:getEvent("finished")
+	event:connect(function()
+		for _, player in Players:GetPlayers() do
+			task.spawn(function()
+				AddedCallback(player)
+			end)
+		end
+	end)
 end
 
 return OnPlayerAdded

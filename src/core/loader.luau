@@ -197,6 +197,10 @@ function Loader._requireAndSortModules<T>(self: Self<T>): { Module<T> }
 end
 
 function Loader._createSingleton<T>(self: Self<T>, module: Module<T>)
+	if not module.new then
+		return
+	end
+
 	-- Try to run the OnInit callback inside the module if it exists
 	local singleton = module.new()
 	local initCallback = singleton.OnInit
