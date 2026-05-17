@@ -143,8 +143,6 @@ function Loader.unimplements<T>(self: Self<T>, class: { __lifecycles: { string }
 			self._lifecycleManager:_remove(lifecycle, class)
 		end
 	end
-
-	print(class)
 end
 
 --[[
