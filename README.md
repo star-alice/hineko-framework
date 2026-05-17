@@ -75,6 +75,9 @@ end
 
 function MyService:OnStart()
     print("MyService started!")
+
+    -- If you want to remove a lifecycle in runtime, you can use:
+    Loader:unimplements(self, "OnPlayerAdded")
 end
 
 function MyService:OnPlayerAdded(player)
